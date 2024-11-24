@@ -3,6 +3,7 @@ from django.utils import timezone
 
 import datetime
 from enum import Enum, unique
+from uuid import uuid4
 
 from bingosync.models.colors import Color
 from bingosync.models.game_type import GameType
@@ -22,7 +23,7 @@ class Event(models.Model):
 
     @staticmethod
     def event_classes():
-        return [ChatEvent, GoalEvent, ColorEvent, RevealedEvent, ConnectionEvent, NewCardEvent]
+        return [ChatEvent, GoalEvent, ColorEvent, RevealedEvent, ConnectionEvent, NewCardEvent, KickPlayersEvent]
 
     @staticmethod
     def get_all_for_room(room):
@@ -144,6 +145,28 @@ class RevealedEvent(Event):
             "type": "revealed",
             "player": self.player.to_json(),
             "player_color": self.player_color.name,
+            "timestamp": self.json_timestamp
+        }
+    
+class KickPlayersEvent(Event):
+    player_uuid = models.UUIDField(default=uuid4)
+
+    def to_json(self):
+        return {
+            "type": "kick",
+            "player": self.player.to_json(),
+            "player_uuid": self.player_uuid,
+            "timestamp": self.json_timestamp
+        }
+    
+class MakePlayerRefereeEvent(Event):
+    player_uuid = models.UUIDField(default=uuid4)
+
+    def to_json(self):
+        return {
+            "type": "referee",
+            "player": self.player.to_json(),
+            "player_uuid": self.player_uuid,
             "timestamp": self.json_timestamp
         }
 
