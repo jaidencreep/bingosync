@@ -9,7 +9,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bingosync', '0040_remove_kickplayersevent_player_name_and_more'),
+        ('bingosync', '0044_remove_kickplayersevent_player_name_and_more'),
     ]
 
     operations = [

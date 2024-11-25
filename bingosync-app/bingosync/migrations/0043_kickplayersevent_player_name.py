@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bingosync', '0038_alter_color_values'),
+        ('bingosync', '0042_alter_color_values'),
     ]
 
     operations = [

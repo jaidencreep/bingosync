@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bingosync', '0037_add_tournament_mode'),
+        ('bingosync', '0041_add_tournament_mode'),
     ]
 
     operations = [
