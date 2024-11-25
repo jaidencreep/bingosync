@@ -50,6 +50,11 @@
                                 {% include 'bingosync/additional_settings_panel.html' %}
                             </div>
                         {% endif %}
+                        {% if player.is_referee %}
+                            <div class="flex-col-footer m-b-l" id="referee-panel-container">
+                                {% include 'bingosync/referee_panel.html' %}
+                            </div>
+                        {% endif %}
                         <div class="flex-col-footer">
                             {% include 'bingosync/chat_settings_panel.html' %}
                         </div>
@@ -60,15 +65,18 @@
     </div>
 </div>
 {% include 'bingosync/new_card_dialog.html' %}
+{% include 'bingosync/referee_player_dialog.html' %}
 <script src="{% static "bingosync/room/util.js" %}"></script>
 <script src="{% static "bingosync/room/color_chooser.js" %}"></script>
 <script src="{% static "bingosync/room/board.js" %}"></script>
 <script src="{% static "bingosync/room/board_cover.js" %}"></script>
 <script src="{% static "bingosync/room/players_panel.js" %}"></script>
 <script src="{% static "bingosync/room/room_settings_panel.js" %}"></script>
+<script src="{% static "bingosync/room/referee_panel.js" %}"></script>
 <script src="{% static "bingosync/room/additional_settings_panel.js" %}"></script>
 <script src="{% static "bingosync/room/chat_panel.js" %}"></script>
 <script src="{% static "bingosync/room/chat_socket.js" %}"></script>
+<script src="{% static "bingosync/room/referee_dialog.js" %}"></script>
 <script src="{% static "bingosync/bingosync.js" %}"></script>
 <script>
     $(document).ready(function() {
@@ -76,15 +84,20 @@
         var player = JSON.parse('{{ player.to_json|jsonify|escapejs }}');
         window.sessionStorage.setItem("room", "{{ room.encoded_uuid }}");
 
+        var connected_players = JSON.parse(' {{ room.connected_players_as_json|jsonify|escapejs }} ')
+
         var boardUrl = "{% url 'room_board' room.encoded_uuid %}";
         var chatHistoryUrl = "{% url 'room_feed' room.encoded_uuid %}";
         var chatUrl = "{% url 'chat_message' %}";
         var colorSelectedUrl = "{% url 'select_color' %}";
         var socketsUrl = "{{ sockets_url }}/broadcast";
         var goalSelectedUrl = "{% url 'goal_selected' %}";
+        var kickPlayerUrl = "{% url 'kick_players' %}";
+        var makeRefereeUrl = "{% url 'make_referee' %}";
         var boardRevealedUrl = "{% url 'board_revealed' %}";
         var roomSettingsUrl = "{% url 'room_settings' room.encoded_uuid %}";
         var temporarySocketKey = "{{ temporary_socket_key }}";
+        var disconnectUrl = "{% url 'room_disconnect' room.encoded_uuid %}";
 
         // Construct all of the UI components
         var colorChooser = new ColorChooser($("#color-chooser"), player, colorSelectedUrl);
@@ -104,7 +117,26 @@
         var chatPanel = new ChatPanel($("#bingo-chat"), $("#chat-settings"), chatUrl, chatHistoryUrl);
         initializeChatSettings($("#chat-settings"), $("#bingo-chat"), ROOM_SETTINGS.fog_of_war);
 
-        var chatSocket = new ChatSocket(chatPanel, board, playersPanel, socketsUrl);
+        var handleKickMessage = function(player_uuid) {
+            console.log("Trying to kick " + player_uuid);
+            console.log("I am " + JSON.stringify(player));
+            if (player.uuid === player_uuid){
+                window.location = disconnectUrl;
+            }
+        }
+
+        var refereeDialog = new RefereeDialog($("#referee-form"), connected_players, kickPlayerUrl, makeRefereeUrl);
+
+        $("#referee-portal").on('click', function(){refereeDialog.updatePlayerList()});
+
+        var handleRefereeMessage = function(player_uuid) {
+            console.log("Trying to reload " + player_uuid);
+            if (player.uuid === player_uuid){
+                document.location.reload();
+            }
+        }
+
+        var chatSocket = new ChatSocket(chatPanel, board, playersPanel, socketsUrl, refereeDialog, handleKickMessage, handleRefereeMessage);
 
         // hacky callback to trigger an update of the playersPanel counters (& highlighter) whenever we update the board.
         var boardRefreshCallback = function() {

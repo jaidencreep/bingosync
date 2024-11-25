@@ -24,6 +24,7 @@ class Room(models.Model):
     passphrase = models.CharField(max_length=255)
     active = models.BooleanField("Active", default=False)
     hide_card = models.BooleanField("Initially Hide Card", default=False)
+    tournament_mode = models.BooleanField("TournamentMode", default=False)
 
     def __str__(self):
         return self.name
@@ -79,6 +80,10 @@ class Room(models.Model):
     @property
     def connected_players(self):
         return [player for player in self.players if player.connected]
+    
+    @property
+    def connected_players_as_json(self):
+        return [player.to_json() for player in self.players if player.connected]
 
     @property
     def latest_event_timestamp(self):
@@ -118,6 +123,7 @@ class Room(models.Model):
             "variant": str(game.game_type),
             "variant_id": game.game_type_value,
             "seed": game.seed,
+            "tournament_mode" : self.tournament_mode
         }
 
 class LockoutMode(Enum):
@@ -264,6 +270,7 @@ class Player(models.Model):
     color_value = models.IntegerField("Color", default=Color.player_default().value, choices=Color.player_choices())
     created_date = models.DateTimeField("Creation Time", default=timezone.now)
     is_spectator = models.BooleanField("Is Spectator", default=False)
+    is_referee = models.BooleanField("Is Referee", default=False)
 
     @staticmethod
     def get_for_encoded_uuid(encoded_player_uuid):
@@ -306,7 +313,8 @@ class Player(models.Model):
             "uuid": self.encoded_uuid,
             "name": self.name,
             "color": self.color.name,
-            "is_spectator": self.is_spectator
+            "is_spectator": self.is_spectator,
+            "is_referee" : self.is_referee
         }
 
 ANON_PLAYER = Player(uuid=ANON_UUID, name="Anonymous", is_spectator=True)
